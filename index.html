@@ -336,7 +336,7 @@
     </div>
     <div class="quiz-topbar">
       <div class="score-pill">🌟 答對 <span id="quizScore">0</span> 題</div>
-      <button class="shuffle-toggle" id="quizShuffleBtn" type="button">🔀 隨機出題</button>
+      <button class="shuffle-toggle" id="quizShuffleBtn" type="button">🔀 重新洗牌</button>
     </div>
 
     <div id="quizQuestionWrap">
@@ -560,11 +560,19 @@
     return qs;
   }
 
-  let quizOrder = buildQuestions();
+  // Fisher-Yates shuffle across ALL 30 individual questions (never grouped by word)
+  function shuffleFlat(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  let quizOrder = shuffleFlat(buildQuestions());
   let qPos = 0;
   let qScore = 0;
   let answeredCorrect = new Array(quizOrder.length).fill(null); // null=unanswered, true/false
-  let quizShuffled = false;
 
   const quizProgressFill = document.getElementById('quizProgressFill');
   const quizProgressLabel = document.getElementById('quizProgressLabel');
@@ -686,27 +694,19 @@
       pct === 1 ? '全對！你是單字小天才！' : pct >= 0.7 ? '表現得很好，繼續保持！' : '再多練習幾次，你可以更棒！';
   }
 
-  function resetQuiz(shuffle) {
-    quizOrder = buildQuestions();
-    if (shuffle) {
-      for (let i = quizOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [quizOrder[i], quizOrder[j]] = [quizOrder[j], quizOrder[i]];
-      }
-    }
+  function resetQuiz() {
+    quizOrder = shuffleFlat(buildQuestions());
     qPos = 0; qScore = 0;
     answeredCorrect = new Array(quizOrder.length).fill(null);
     renderQuiz();
   }
 
   quizShuffleBtn.addEventListener('click', () => {
-    quizShuffled = !quizShuffled;
-    quizShuffleBtn.classList.toggle('on', quizShuffled);
-    showToast(quizShuffled ? '已開啟隨機出題 🔀' : '已恢復原本順序');
-    resetQuiz(quizShuffled);
+    showToast('已將全部 30 題重新隨機排序 🔀');
+    resetQuiz();
   });
 
-  restartBtn.addEventListener('click', () => resetQuiz(quizShuffled));
+  restartBtn.addEventListener('click', () => resetQuiz());
 
   document.addEventListener('keydown', (e) => {
     if (!viewQuiz.classList.contains('active')) return;
